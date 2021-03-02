@@ -1,0 +1,4 @@
+---
+user_name: node
+apps_dir: "/opt/node-apps"
+pm2_app_archive: pm2-logrotate-2.7.0.tgz

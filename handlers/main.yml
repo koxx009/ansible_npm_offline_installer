@@ -1,0 +1,5 @@
+---
+- name: remove_tmp_node
+  file:
+    state: absent
+    path: "{{ tmp_node.path }}"

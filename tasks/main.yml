@@ -1,0 +1,44 @@
+---
+- name: Create temporary directory
+  file:
+    state: directory
+    path: /tmp/ansible-node
+    owner: "{{ user_name }}"
+    group: "{{ user_name }}"
+  register: tmp_node
+
+- name: Copy npm tgz to temporary directory
+  copy:
+    src: "{{ item }}"
+    dest: "{{ tmp_node.path }}"
+    force: no
+    owner: "{{ user_name }}"
+    group: "{{ user_name }}"
+  with_fileglob:
+    - "files/*.tgz"
+  notify: 
+    - remove_tmp_node
+
+- name: Find all tgz files in temporary directory
+  find:
+    paths: "{{ tmp_node.path }}"
+    patterns: "*.tgz"
+  register: node_files
+
+- set_fact:
+    node_list: "{{ node_files.files | map(attribute='path') | list }}"
+
+- name: Install package from custom registry.
+  npm:
+    name: "{{ item }}"
+    global: yes
+  loop: "{{ node_list | flatten(1) }}"
+
+- name: Install pm2-logrotate
+  become: true
+  become_user: "{{ user_name }}"
+  shell: |
+    pm2 install {{ tmp_node.path }}/{{ pm2_app_archive }}
+    pm2 set pm2-logrotate:compress true
+    pm2 set pm2-logrotate:max_size 10G
+  tags: pm2-logrotate
